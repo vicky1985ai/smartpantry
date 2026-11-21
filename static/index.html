@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SmartPantry - Home Grocery & Price Intelligence</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col pb-24 md:pb-6">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i data-lucide="shopping-basket" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-slate-900 tracking-tight leading-tight">SmartPantry</h1>
+          <p class="text-xs text-slate-500 font-medium">घर की रसोई व बजट साथी</p>
+        </div>
+      </div>
+
+      <!-- Header Actions: User Selector & Mobile Connect -->
+      <div class="flex items-center space-x-2">
+        <!-- User Switcher -->
+        <div class="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 text-xs font-semibold">
+          <button id="user-vipin-btn" onclick="setActiveUser('Vipin')" class="px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 bg-white text-slate-900 shadow-sm">
+            <span>👤</span>
+            <span>Vipin</span>
+          </button>
+          <button id="user-wife-btn" onclick="setActiveUser('Wife')" class="px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 text-slate-500 hover:text-slate-900">
+            <span>👩</span>
+            <span>Wife</span>
+          </button>
+        </div>
+
+        <!-- Connect Phone QR Button -->
+        <button onclick="openPhoneModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition">
+          <i data-lucide="smartphone" class="w-4 h-4 text-brand-600"></i>
+          <span>Phone Sync</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTAINER ================= -->
+  <main class="max-w-6xl mx-auto px-4 py-5 flex-1 w-full">
+
+    <!-- DESKTOP TOP NAV TABS -->
+    <div class="hidden md:flex items-center space-x-1 bg-slate-200/70 p-1 rounded-2xl mb-6 max-w-2xl mx-auto border border-slate-300/60">
+      <button onclick="switchTab('pantry')" id="nav-d-pantry" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 bg-white text-brand-700 shadow-sm">
+        <i data-lucide="package" class="w-4 h-4"></i>
+        <span>Pantry (सामान)</span>
+      </button>
+      <button onclick="switchTab('shopping')" id="nav-d-shopping" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900">
+        <i data-lucide="check-square" class="w-4 h-4"></i>
+        <span>Shopping List</span>
+        <span id="badge-shopping-count" class="hidden ml-1 px-1.5 py-0.2 bg-rose-500 text-white rounded-full text-[10px]">0</span>
+      </button>
+      <button onclick="switchTab('scanner')" id="nav-d-scanner" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900">
+        <i data-lucide="receipt" class="w-4 h-4"></i>
+        <span>Scan Bill (बिल)</span>
+      </button>
+      <button onclick="switchTab('radar')" id="nav-d-radar" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900">
+        <i data-lucide="trending-down" class="w-4 h-4"></i>
+        <span>Price Radar</span>
+      </button>
+      <button onclick="switchTab('activity')" id="nav-d-activity" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900">
+        <i data-lucide="history" class="w-4 h-4"></i>
+        <span>Activity</span>
+      </button>
+    </div>
+
+    <!-- ================= VIEW 1: PANTRY / INVENTORY ================= -->
+    <section id="view-pantry" class="tab-view block space-y-5">
+      
+      <!-- Top Action Bar -->
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Search -->
+        <div class="relative flex-1 max-w-md">
+          <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
+          <input type="text" id="pantry-search" oninput="filterInventory()" placeholder="Search atta, dal, oil, butter..." 
+            class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition shadow-sm" />
+        </div>
+
+        <!-- Add Item Button -->
+        <button onclick="openAddItemModal()" class="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-600/20 transition">
+          <i data-lucide="plus-circle" class="w-4 h-4"></i>
+          <span>Add Grocery Item</span>
+        </button>
+      </div>
+
+      <!-- Category Filter Chips -->
+      <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar pb-1 text-xs font-semibold">
+        <button onclick="setCategoryFilter('All')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-slate-900 text-white border border-slate-900 whitespace-nowrap">All Items</button>
+        <button onclick="setCategoryFilter('Grains & Dals')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🌾 Grains & Dals</button>
+        <button onclick="setCategoryFilter('Dairy & Bakery')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🥛 Dairy & Bakery</button>
+        <button onclick="setCategoryFilter('Spices & Cooking Oils')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🛢️ Oils & Spices</button>
+        <button onclick="setCategoryFilter('Fresh Produce')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🥦 Fresh Veggies</button>
+        <button onclick="setCategoryFilter('Snacks & Beverages')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">☕ Snacks & Tea</button>
+        <button onclick="setCategoryFilter('Cleaning & Personal Care')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🧼 Cleaning & Home</button>
+      </div>
+
+      <!-- Status Filter Tabs -->
+      <div class="flex items-center space-x-2 border-b border-slate-200 pb-2 text-xs font-bold text-slate-500">
+        <button onclick="setStatusFilter('All')" id="status-tab-all" class="text-brand-600 border-b-2 border-brand-600 pb-2 font-extrabold">All Pantry (<span id="count-all">0</span>)</button>
+        <button onclick="setStatusFilter('low')" id="status-tab-low" class="hover:text-slate-900 pb-2">🟡 Running Low (<span id="count-low">0</span>)</button>
+        <button onclick="setStatusFilter('out_of_stock')" id="status-tab-out" class="hover:text-slate-900 pb-2">🔴 Empty / Out (<span id="count-out">0</span>)</button>
+        <button onclick="setStatusFilter('in_stock')" id="status-tab-in" class="hover:text-slate-900 pb-2">🟢 In Stock (<span id="count-in">0</span>)</button>
+      </div>
+
+      <!-- Inventory Grid -->
+      <div id="inventory-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <!-- Rendered via JavaScript -->
+      </div>
+      <div id="inventory-empty" class="hidden text-center py-12 bg-white rounded-2xl border border-slate-200">
+        <i data-lucide="package-search" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
+        <p class="text-sm font-semibold text-slate-700">No grocery items found</p>
+        <p class="text-xs text-slate-400">Add an item or clear filters to see your inventory.</p>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 2: SHOPPING LIST ================= -->
+    <section id="view-shopping" class="tab-view hidden space-y-5">
+      
+      <!-- Top banner for shopping -->
+      <div class="bg-gradient-to-r from-amber-500/10 via-brand-500/10 to-emerald-500/10 p-4 rounded-2xl border border-amber-200/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div>
+          <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+            <span>🛒 Live Shared Shopping List</span>
+          </h2>
+          <p class="text-xs text-slate-600 mt-0.5">
+            Auto-populated whenever you or your wife marks an item as <b>Low</b> or <b>Empty</b>.
+          </p>
+        </div>
+        <button onclick="openQuickShopModal()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Add Custom Item</span>
+        </button>
+      </div>
+
+      <!-- Shopping List Table/Cards -->
+      <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-500">
+          <span>REQUIRED ITEMS</span>
+          <span id="shopping-pending-count" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">0 Items</span>
+        </div>
+        <div id="shopping-list-container" class="divide-y divide-slate-100">
+          <!-- Rendered via JS -->
+        </div>
+        <div id="shopping-empty" class="hidden text-center py-12">
+          <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-brand-500 mb-2"></i>
+          <p class="text-sm font-bold text-slate-800">Your shopping list is clear!</p>
+          <p class="text-xs text-slate-400 mt-0.5">Everything is well-stocked in your pantry.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 3: AI BILL SCANNER ================= -->
+    <section id="view-scanner" class="tab-view hidden space-y-5">
+      
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center">
+            <i data-lucide="scan-line" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Grocery Bill & Screenshot Scanner</h2>
+            <p class="text-xs text-slate-500">Supports Blinkit, Zepto, Swiggy Instamart, JioMart, BigBasket, DMart, and paper receipts.</p>
+          </div>
+        </div>
+
+        <!-- Dropzone / File Picker -->
+        <div id="dropzone" onclick="triggerFileInput()" 
+          class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50 hover:bg-brand-50/30 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-3">
+          <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-brand-600 border border-slate-200">
+            <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-slate-800">Click to upload bill image or PDF</p>
+            <p class="text-xs text-slate-500 mt-1">Take photo with mobile camera or upload order screenshot</p>
+          </div>
+          <span class="text-[11px] font-semibold text-brand-700 bg-brand-100/70 px-2.5 py-1 rounded-full">
+            Powered by Gemini AI Vision
+          </span>
+          <input type="file" id="bill-file-input" accept="image/*,.pdf" capture="environment" class="hidden" onchange="handleBillUpload(event)" />
+        </div>
+
+        <!-- Scanning Spinner -->
+        <div id="scan-loading" class="hidden text-center py-8 space-y-3">
+          <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-sm font-bold text-slate-800">Analyzing bill with Gemini AI...</p>
+          <p class="text-xs text-slate-500">Extracting store name, items, quantities, and price per unit.</p>
+        </div>
+
+        <!-- Extracted Review Modal/Section -->
+        <div id="scan-result" class="hidden space-y-4 pt-4 border-t border-slate-200">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Detected Store</span>
+              <p id="res-store" class="text-sm font-bold text-slate-900">Blinkit</p>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Bill Date</span>
+              <p id="res-date" class="text-sm font-bold text-slate-900">2026-11-20</p>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Amount</span>
+              <p id="res-total" class="text-sm font-bold text-brand-700">₹0.0</p>
+            </div>
+            <button onclick="confirmBillImport()" class="w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 transition flex items-center justify-center space-x-1.5">
+              <i data-lucide="check-check" class="w-4 h-4"></i>
+              <span>Confirm & Sync Everything</span>
+            </button>
+          </div>
+
+          <!-- Extracted Items Review Table -->
+          <div class="border border-slate-200 rounded-xl overflow-hidden">
+            <div class="p-2.5 bg-slate-100 text-xs font-bold text-slate-600 flex justify-between">
+              <span>EXTRACTED ITEMS (<span id="res-items-count">0</span>)</span>
+              <span class="text-[11px] text-slate-400">Review before saving</span>
+            </div>
+            <div id="res-items-list" class="divide-y divide-slate-100 max-h-96 overflow-y-auto">
+              <!-- Item rows -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ================= VIEW 4: PRICE RADAR ================= -->
+    <section id="view-radar" class="tab-view hidden space-y-5">
+      
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center space-x-2">
+              <i data-lucide="trending-down" class="w-5 h-5 text-brand-600"></i>
+              <span>Price & Vendor Intelligence</span>
+            </h2>
+            <p class="text-xs text-slate-500">Historical comparison across Blinkit, Zepto, Instamart, JioMart, BigBasket, and DMart.</p>
+          </div>
+          <!-- Search in price radar -->
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+            <input type="text" id="radar-search" oninput="loadPriceRadar()" placeholder="Search product price..." 
+              class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
+          </div>
+        </div>
+
+        <!-- Radar Comparison Cards -->
+        <div id="radar-container" class="space-y-4">
+          <!-- Rendered via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= VIEW 5: ACTIVITY LOG ================= -->
+    <section id="view-activity" class="tab-view hidden space-y-5">
+      <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Family Activity & Sync Log</h2>
+            <p class="text-xs text-slate-500">Track who consumed what, updated stock, or added to shopping list.</p>
+          </div>
+          <button onclick="loadActivityLog()" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition">
+            <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <div id="activity-list" class="space-y-3">
+          <!-- Activity items -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= BOTTOM NAVIGATION (MOBILE) ================= -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-2 py-2 flex items-center justify-around">
+    <button onclick="switchTab('pantry')" id="nav-m-pantry" class="flex flex-col items-center text-brand-600 font-bold text-[11px] py-1 px-2">
+      <i data-lucide="package" class="w-5 h-5 mb-0.5"></i>
+      <span>Pantry</span>
+    </button>
+    <button onclick="switchTab('shopping')" id="nav-m-shopping" class="flex flex-col items-center text-slate-400 font-semibold text-[11px] py-1 px-2 relative">
+      <i data-lucide="check-square" class="w-5 h-5 mb-0.5"></i>
+      <span>Shopping</span>
+      <span id="badge-shopping-count-mobile" class="hidden absolute top-0.5 right-1 px-1 py-0.2 bg-rose-500 text-white rounded-full text-[9px] font-bold">0</span>
+    </button>
+    <button onclick="switchTab('scanner')" id="nav-m-scanner" class="flex flex-col items-center text-slate-400 font-semibold text-[11px] py-1 px-2">
+      <div class="w-9 h-9 rounded-full bg-brand-600 text-white flex items-center justify-center -mt-4 shadow-lg shadow-brand-600/30">
+        <i data-lucide="scan" class="w-5 h-5"></i>
+      </div>
+      <span class="mt-0.5">Scan Bill</span>
+    </button>
+    <button onclick="switchTab('radar')" id="nav-m-radar" class="flex flex-col items-center text-slate-400 font-semibold text-[11px] py-1 px-2">
+      <i data-lucide="trending-down" class="w-5 h-5 mb-0.5"></i>
+      <span>Prices</span>
+    </button>
+    <button onclick="switchTab('activity')" id="nav-m-activity" class="flex flex-col items-center text-slate-400 font-semibold text-[11px] py-1 px-2">
+      <i data-lucide="history" class="w-5 h-5 mb-0.5"></i>
+      <span>Activity</span>
+    </button>
+  </nav>
+
+  <!-- ================= MODAL: ADD GROCERY ITEM ================= -->
+  <div id="modal-add-item" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900">Add New Grocery Item</h3>
+        <button onclick="closeAddItemModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs font-semibold">
+        <!-- Item Name + Auto Enrich Button -->
+        <div>
+          <label class="block text-slate-600 mb-1">Product Name</label>
+          <div class="flex space-x-2">
+            <input type="text" id="add-name" placeholder="e.g. Fortune Mustard Oil" class="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
+            <button type="button" onclick="autoEnrichProduct()" id="btn-enrich" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-600"></i>
+              <span>AI Fill</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-600 mb-1">Category</label>
+            <select id="add-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
+              <option value="Grains & Dals">Grains & Dals</option>
+              <option value="Dairy & Bakery">Dairy & Bakery</option>
+              <option value="Spices & Cooking Oils">Spices & Cooking Oils</option>
+              <option value="Fresh Produce">Fresh Produce</option>
+              <option value="Snacks & Beverages">Snacks & Beverages</option>
+              <option value="Cleaning & Personal Care">Cleaning & Personal Care</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-600 mb-1">Preferred Brand ⭐</label>
+            <input type="text" id="add-brand" placeholder="e.g. Fortune" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-slate-600 mb-1">Quantity</label>
+            <input type="number" step="0.1" id="add-qty" value="1.0" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" />
+          </div>
+          <div>
+            <label class="block text-slate-600 mb-1">Unit</label>
+            <select id="add-unit" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
+              <option value="kg">kg</option>
+              <option value="L">L</option>
+              <option value="g">g</option>
+              <option value="ml">ml</option>
+              <option value="pcs">pcs</option>
+              <option value="pack">pack</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-slate-600 mb-1">Location</label>
+            <select id="add-location" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
+              <option value="Kitchen Pantry">Kitchen Pantry</option>
+              <option value="Fridge">Fridge</option>
+              <option value="Freezer">Freezer</option>
+              <option value="Store Room">Store Room</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-600 mb-1">Stock Status</label>
+          <div class="grid grid-cols-3 gap-2">
+            <label class="border border-slate-200 p-2 rounded-xl flex items-center space-x-1.5 cursor-pointer has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50/50">
+              <input type="radio" name="add-status" value="in_stock" checked class="text-brand-600" />
+              <span>🟢 In Stock</span>
+            </label>
+            <label class="border border-slate-200 p-2 rounded-xl flex items-center space-x-1.5 cursor-pointer has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
+              <input type="radio" name="add-status" value="low" class="text-amber-600" />
+              <span>🟡 Low</span>
+            </label>
+            <label class="border border-slate-200 p-2 rounded-xl flex items-center space-x-1.5 cursor-pointer has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50">
+              <input type="radio" name="add-status" value="out_of_stock" class="text-rose-600" />
+              <span>🔴 Empty</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end space-x-2">
+        <button onclick="closeAddItemModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50 transition">Cancel</button>
+        <button onclick="submitNewItem()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 transition">Save to Pantry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: QUICK ADD TO SHOPPING LIST ================= -->
+  <div id="modal-quick-shop" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <span>🛒 Add to Shopping List</span>
+        </h3>
+        <button onclick="closeQuickShopModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs font-semibold">
+        <div>
+          <label class="block text-slate-600 mb-1">Item Name</label>
+          <input type="text" id="shop-name-input" placeholder="e.g. Bread, Paneer, Coriander..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1">Preferred Brand (Optional ⭐)</label>
+          <input type="text" id="shop-brand-input" placeholder="e.g. Amul, Harvest Gold..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-600 mb-1">Quantity Needed</label>
+            <input type="number" step="0.1" id="shop-qty-input" value="1.0" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+          </div>
+          <div>
+            <label class="block text-slate-600 mb-1">Unit</label>
+            <select id="shop-unit-input" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white">
+              <option value="pack">pack</option>
+              <option value="kg">kg</option>
+              <option value="L">L</option>
+              <option value="g">g</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end space-x-2">
+        <button onclick="closeQuickShopModal()" class="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
+        <button onclick="submitQuickShopItem()" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition">Add to List</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: STAR BRAND PREFERENCE ================= -->
+  <div id="modal-star-brand" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <span>⭐ Set Preferred Brand</span>
+        </h3>
+        <button onclick="closeStarModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="star-item-id" />
+      <div class="space-y-3 text-xs font-semibold">
+        <p id="star-item-title" class="text-sm font-bold text-slate-800">Tata Sampann Toor Dal</p>
+        <div>
+          <label class="block text-slate-600 mb-1">Preferred Brand Name</label>
+          <input type="text" id="star-brand-input" placeholder="e.g. Tata Sampann" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1">Reason (Optional)</label>
+          <input type="text" id="star-reason-input" placeholder="e.g. Wife prefers taste / cooks faster" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end space-x-2">
+        <button onclick="closeStarModal()" class="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
+        <button onclick="saveStarBrand()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition">Set Preference ⭐</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: CONNECT PHONE / QR CODE ================= -->
+  <div id="modal-phone-qr" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4 text-center border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <i data-lucide="smartphone" class="w-5 h-5 text-brand-600"></i>
+          <span>Open on Mobile Phone</span>
+        </h3>
+        <button onclick="closePhoneModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500">Scan this QR code with your or your wife's phone camera (ensure phone is on home Wi-Fi):</p>
+      
+      <div id="qrcode-container" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 inline-block mx-auto shadow-inner">
+        <!-- QR code canvas rendered here -->
+      </div>
+
+      <div class="bg-slate-100 p-2.5 rounded-xl text-xs font-mono text-slate-700 break-all select-all font-semibold" id="phone-url-text">
+        http://192.168.1.50:8000
+      </div>
+
+      <p class="text-[11px] text-slate-400">💡 Tip: Tap "Add to Home Screen" in Chrome/Safari to use it just like an app!</p>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // Global state
+    let currentUser = 'Vipin';
+    let currentCategory = 'All';
+    let currentStatus = 'All';
+    let inventoryData = [];
+    let shoppingData = [];
+    let parsedBillDraft = null;
+
+    // Initialize Lucide icons
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      loadInventory();
+      loadShoppingList();
+      loadActivityLog();
+      loadPriceRadar();
+      setupNetworkQR();
+    });
+
+    function setActiveUser(user) {
+      currentUser = user;
+      const vBtn = document.getElementById("user-vipin-btn");
+      const wBtn = document.getElementById("user-wife-btn");
+
+      if (user === 'Vipin') {
+        vBtn.className = "px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 bg-white text-slate-900 shadow-sm";
+        wBtn.className = "px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 text-slate-500 hover:text-slate-900";
+      } else {
+        wBtn.className = "px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 bg-white text-slate-900 shadow-sm";
+        vBtn.className = "px-2.5 py-1.5 rounded-lg transition-all flex items-center space-x-1 text-slate-500 hover:text-slate-900";
+      }
+    }
+
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-view").forEach(el => el.classList.add("hidden"));
+      const target = document.getElementById(`view-${tabId}`);
+      if (target) target.classList.remove("hidden");
+
+      // Update Desktop tabs
+      ['pantry', 'shopping', 'scanner', 'radar', 'activity'].forEach(t => {
+        const btnD = document.getElementById(`nav-d-${t}`);
+        const btnM = document.getElementById(`nav-m-${t}`);
+        if (btnD) {
+          if (t === tabId) {
+            btnD.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 bg-white text-brand-700 shadow-sm";
+          } else {
+            btnD.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900";
+          }
+        }
+        if (btnM) {
+          if (t === tabId) {
+            btnM.classList.replace("text-slate-400", "text-brand-600");
+            btnM.classList.add("font-bold");
+          } else {
+            btnM.classList.replace("text-brand-600", "text-slate-400");
+            btnM.classList.remove("font-bold");
+          }
+        }
+      });
+
+      if (tabId === 'pantry') loadInventory();
+      if (tabId === 'shopping') loadShoppingList();
+      if (tabId === 'radar') loadPriceRadar();
+      if (tabId === 'activity') loadActivityLog();
+
+      lucide.createIcons();
+    }
+
+    // ----------------- INVENTORY -----------------
+    async function loadInventory() {
+      try {
+        let url = `/api/inventory?`;
+        if (currentCategory !== 'All') url += `category=${encodeURIComponent(currentCategory)}&`;
+        if (currentStatus !== 'All') url += `status=${encodeURIComponent(currentStatus)}&`;
+
+        const res = await fetch(url);
+        inventoryData = await res.json();
+        renderInventory(inventoryData);
+        updateStatusCounts();
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderInventory(items) {
+      const container = document.getElementById("inventory-grid");
+      const emptyMsg = document.getElementById("inventory-empty");
+
+      if (!items || items.length === 0) {
+        container.innerHTML = "";
+        emptyMsg.classList.remove("hidden");
+        return;
+      }
+      emptyMsg.classList.add("hidden");
+
+      container.innerHTML = items.map(item => {
+        const isLow = item.status === 'low';
+        const isOut = item.status === 'out_of_stock';
+        
+        const statusBadge = isOut 
+          ? `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🔴 Empty</span>`
+          : (isLow 
+            ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🟡 Running Low</span>`
+            : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🟢 In Stock</span>`);
+
+        const starBrand = item.preferred_brand 
+          ? `<div onclick="openStarModal(${item.id}, '${escapeQuotes(item.name)}', '${escapeQuotes(item.preferred_brand)}', '${escapeQuotes(item.brand_reason || '')}')" 
+              class="cursor-pointer inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-200/60 px-2 py-0.5 rounded-lg text-[11px] font-bold hover:bg-amber-100 transition">
+              <span>⭐ ${item.preferred_brand}</span>
+              ${item.brand_reason ? `<span class="text-amber-600 font-normal">(${item.brand_reason})</span>` : ''}
+            </div>`
+          : `<button onclick="openStarModal(${item.id}, '${escapeQuotes(item.name)}', '', '')" 
+              class="inline-flex items-center space-x-1 text-slate-400 hover:text-amber-600 text-[11px] font-semibold">
+              <i data-lucide="star" class="w-3.5 h-3.5"></i>
+              <span>Set Preferred Brand</span>
+            </button>`;
+
+        const cheapestTip = item.cheapest_store && item.cheapest_price > 0
+          ? `<div class="text-[11px] text-slate-500 flex items-center space-x-1 mt-1">
+              <i data-lucide="tag" class="w-3 h-3 text-brand-600"></i>
+              <span>Lowest: <b>₹${item.cheapest_price}</b> @ ${item.cheapest_store}</span>
+            </div>`
+          : '';
+
+        return `
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
+            <div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-slate-900 text-sm leading-snug">${item.name}</h3>
+                  <div class="mt-1">${starBrand}</div>
+                </div>
+                ${statusBadge}
+              </div>
+
+              <!-- Qty & Location -->
+              <div class="mt-3 flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2 rounded-xl">
+                <div>
+                  <span class="text-slate-400">Stock:</span>
+                  <span class="font-bold text-slate-800 text-sm">${item.quantity} ${item.unit}</span>
+                </div>
+                <div class="text-right">
+                  <span class="text-slate-400">Place:</span>
+                  <span class="font-semibold text-slate-700">${item.storage_location}</span>
+                </div>
+              </div>
+
+              ${cheapestTip}
+            </div>
+
+            <!-- 1-Tap Quick Action Buttons -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 text-xs">
+              <button onclick="consumeItem(${item.id}, 'decrement')" title="Consumed some"
+                class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition flex items-center justify-center space-x-1">
+                <span>-1 ${item.unit}</span>
+              </button>
+              <button onclick="consumeItem(${item.id}, 'mark_low')" title="Mark as running low"
+                class="flex-1 py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg transition flex items-center justify-center space-x-1">
+                <span>Mark Low</span>
+              </button>
+              <button onclick="consumeItem(${item.id}, 'mark_out')" title="Finished / Out of stock"
+                class="flex-1 py-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg transition flex items-center justify-center space-x-1">
+                <span>Empty</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      lucide.createIcons();
+    }
+
+    async function updateStatusCounts() {
+      try {
+        const res = await fetch('/api/inventory');
+        const all = await res.json();
+        document.getElementById("count-all").innerText = all.length;
+        document.getElementById("count-in").innerText = all.filter(x => x.status === 'in_stock').length;
+        document.getElementById("count-low").innerText = all.filter(x => x.status === 'low').length;
+        document.getElementById("count-out").innerText = all.filter(x => x.status === 'out_of_stock').length;
+      } catch (e) {}
+    }
+
+    async function consumeItem(id, action) {
+      try {
+        const res = await fetch(`/api/inventory/${id}/consume`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: action, user_name: currentUser })
+        });
+        if (res.ok) {
+          loadInventory();
+          loadShoppingList();
+        }
+      } catch (err) {
+        alert("Error updating item: " + err);
+      }
+    }
+
+    function filterInventory() {
+      const q = document.getElementById("pantry-search").value.toLowerCase();
+      const filtered = inventoryData.filter(item => 
+        item.name.toLowerCase().includes(q) || 
+        (item.preferred_brand && item.preferred_brand.toLowerCase().includes(q)) ||
+        (item.brand && item.brand.toLowerCase().includes(q))
+      );
+      renderInventory(filtered);
+    }
+
+    function setCategoryFilter(cat) {
+      currentCategory = cat;
+      document.querySelectorAll(".cat-chip").forEach(btn => {
+        if (btn.innerText.includes(cat) || (cat === 'All' && btn.innerText.includes('All'))) {
+          btn.className = "cat-chip px-3.5 py-1.5 rounded-full transition bg-slate-900 text-white border border-slate-900 whitespace-nowrap";
+        } else {
+          btn.className = "cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap";
+        }
+      });
+      loadInventory();
+    }
+
+    function setStatusFilter(status) {
+      currentStatus = status;
+      ['all', 'low', 'out', 'in'].forEach(s => {
+        const key = s === 'all' ? 'All' : (s === 'out' ? 'out_of_stock' : (s === 'in' ? 'in_stock' : 'low'));
+        const tab = document.getElementById(`status-tab-${s}`);
+        if (key === status) {
+          tab.className = "text-brand-600 border-b-2 border-brand-600 pb-2 font-extrabold";
+        } else {
+          tab.className = "hover:text-slate-900 pb-2";
+        }
+      });
+      loadInventory();
+    }
+
+    // ----------------- SHOPPING LIST -----------------
+    async function loadShoppingList() {
+      try {
+        const res = await fetch('/api/shopping-list');
+        shoppingData = await res.json();
+        renderShoppingList(shoppingData);
+
+        const count = shoppingData.length;
+        document.getElementById("shopping-pending-count").innerText = `${count} Items`;
+        
+        const bD = document.getElementById("badge-shopping-count");
+        const bM = document.getElementById("badge-shopping-count-mobile");
+        if (count > 0) {
+          bD.classList.remove("hidden");
+          bD.innerText = count;
+          bM.classList.remove("hidden");
+          bM.innerText = count;
+        } else {
+          bD.classList.add("hidden");
+          bM.classList.add("hidden");
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderShoppingList(items) {
+      const container = document.getElementById("shopping-list-container");
+      const emptyMsg = document.getElementById("shopping-empty");
+
+      if (!items || items.length === 0) {
+        container.innerHTML = "";
+        emptyMsg.classList.remove("hidden");
+        return;
+      }
+      emptyMsg.classList.add("hidden");
+
+      container.innerHTML = items.map(item => {
+        const brandBadge = item.preferred_brand 
+          ? `<span class="bg-amber-100 text-amber-900 text-[11px] font-bold px-2 py-0.5 rounded-lg border border-amber-200">
+              ⭐ Preferred Brand: <b>${item.preferred_brand}</b>
+            </span>`
+          : '';
+
+        const dealTip = item.lowest_store && item.lowest_price > 0
+          ? `<span class="text-xs text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md font-semibold border border-brand-200">
+              💡 Cheapest at <b>${item.lowest_store}</b> (₹${item.lowest_price})
+            </span>`
+          : '';
+
+        return `
+          <div class="p-3.5 sm:p-4 hover:bg-slate-50 transition flex items-center justify-between gap-3">
+            <div class="flex items-start space-x-3">
+              <button onclick="toggleBought(${item.id})" class="mt-0.5 w-6 h-6 rounded-lg border-2 border-slate-300 hover:border-brand-500 hover:bg-brand-50 flex items-center justify-center transition text-transparent hover:text-brand-600">
+                <i data-lucide="check" class="w-4 h-4"></i>
+              </button>
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">${item.item_name}</h4>
+                <div class="flex flex-wrap items-center gap-1.5 mt-1">
+                  ${brandBadge}
+                  ${dealTip}
+                  <span class="text-[11px] text-slate-400">Added by ${item.added_by}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-lg">
+                ${item.quantity_needed} ${item.unit}
+              </span>
+              <button onclick="deleteShoppingItem(${item.id})" class="text-slate-300 hover:text-rose-500 p-1">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      lucide.createIcons();
+    }
+
+    async function toggleBought(id) {
+      try {
+        const res = await fetch(`/api/shopping-list/${id}/toggle-bought?user_name=${currentUser}`, { method: 'POST' });
+        if (res.ok) {
+          loadShoppingList();
+          loadInventory();
+        }
+      } catch (err) {
+        alert(err);
+      }
+    }
+
+    async function deleteShoppingItem(id) {
+      try {
+        await fetch(`/api/shopping-list/${id}`, { method: 'DELETE' });
+        loadShoppingList();
+      } catch (e) {}
+    }
+
+    // ----------------- BILL SCANNER -----------------
+    function triggerFileInput() {
+      document.getElementById("bill-file-input").click();
+    }
+
+    async function handleBillUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const dropzone = document.getElementById("dropzone");
+      const loading = document.getElementById("scan-loading");
+      const resultSec = document.getElementById("scan-result");
+
+      dropzone.classList.add("hidden");
+      loading.classList.remove("hidden");
+      resultSec.classList.add("hidden");
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("user_name", currentUser);
+
+      try {
+        const res = await fetch("/api/bills/upload-and-scan", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        parsedBillDraft = data;
+
+        loading.classList.add("hidden");
+        resultSec.classList.remove("hidden");
+
+        document.getElementById("res-store").innerText = data.store_name || "Unknown Store";
+        document.getElementById("res-date").innerText = data.bill_date || "Today";
+        document.getElementById("res-total").innerText = `₹${data.total_amount || 0.0}`;
+        document.getElementById("res-items-count").innerText = (data.items || []).length;
+
+        const list = document.getElementById("res-items-list");
+        list.innerHTML = (data.items || []).map((it, idx) => `
+          <div class="p-3 text-xs flex items-center justify-between hover:bg-slate-50">
+            <div>
+              <p class="font-bold text-slate-800">${it.name}</p>
+              <div class="flex items-center space-x-2 text-[11px] text-slate-500 mt-0.5">
+                <span>Brand: <b>${it.brand || 'Generic'}</b></span>
+                <span>•</span>
+                <span>${it.quantity} ${it.unit}</span>
+                ${it.unit_price ? `<span>• ₹${it.unit_price}/${it.unit}</span>` : ''}
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="font-extrabold text-slate-900 text-sm">₹${it.price_paid}</span>
+              ${it.mrp > it.price_paid ? `<span class="block text-[10px] text-slate-400 line-through">MRP ₹${it.mrp}</span>` : ''}
+            </div>
+          </div>
+        `).join("");
+
+        lucide.createIcons();
+      } catch (err) {
+        loading.classList.add("hidden");
+        dropzone.classList.remove("hidden");
+        alert("Failed to analyze bill: " + err);
+      }
+    }
+
+    async function confirmBillImport() {
+      if (!parsedBillDraft) return;
+
+      const payload = {
+        store_name: parsedBillDraft.store_name || "Store",
+        bill_date: parsedBillDraft.bill_date || new Date().toISOString().split("T")[0],
+        total_amount: parseFloat(parsedBillDraft.total_amount) || 0.0,
+        image_filename: parsedBillDraft.image_filename || "",
+        items: parsedBillDraft.items || [],
+        uploaded_by: currentUser
+      };
+
+      try {
+        const res = await fetch("/api/bills/confirm-import", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const out = await res.json();
+        if (out.success) {
+          alert(`Success! ${out.items_updated.length} items restocked, ${out.items_created.length} new items added.`);
+          document.getElementById("scan-result").classList.add("hidden");
+          document.getElementById("dropzone").classList.remove("hidden");
+          switchTab('pantry');
+        }
+      } catch (e) {
+        alert("Error saving: " + e);
+      }
+    }
+
+    // ----------------- PRICE RADAR -----------------
+    async function loadPriceRadar() {
+      const q = document.getElementById("radar-search") ? document.getElementById("radar-search").value : "";
+      try {
+        const res = await fetch(`/api/prices/compare${q ? `?search=${encodeURIComponent(q)}` : ''}`);
+        const data = await res.json();
+        renderPriceRadar(data);
+      } catch (e) {}
+    }
+
+    function renderPriceRadar(groups) {
+      const container = document.getElementById("radar-container");
+      if (!groups || groups.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 py-6 text-center">No price history found yet.</p>`;
+        return;
+      }
+
+      container.innerHTML = groups.map(g => {
+        const records = g.records || [];
+        const savingsBadge = g.savings_percent > 0 
+          ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              Save up to ${g.savings_percent}%
+            </span>`
+          : '';
+
+        return `
+          <div class="border border-slate-200 rounded-2xl p-4 bg-slate-50/50 space-y-3">
+            <div class="flex items-start justify-between">
+              <div>
+                <h4 class="font-bold text-slate-900 text-sm">${g.item_name}</h4>
+                <p class="text-xs text-slate-500">Brand: ${g.brand || 'Staple'}</p>
+              </div>
+              ${savingsBadge}
+            </div>
+
+            <!-- Stores Price Comparison Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
+              ${records.map(r => {
+                const isLowest = r.unit_price === g.lowest_price;
+                return `
+                  <div class="p-2.5 rounded-xl border ${isLowest ? 'border-brand-500 bg-brand-50/50 shadow-sm' : 'border-slate-200 bg-white'} text-xs">
+                    <div class="flex items-center justify-between text-[11px]">
+                      <span class="font-bold text-slate-700">${r.store_name}</span>
+                      ${isLowest ? '<span class="text-[9px] font-extrabold text-brand-700 bg-brand-200/60 px-1 rounded">CHEAPEST</span>' : ''}
+                    </div>
+                    <p class="text-base font-extrabold ${isLowest ? 'text-brand-700' : 'text-slate-900'} mt-1">₹${r.price_paid}</p>
+                    <p class="text-[10px] text-slate-400">₹${r.unit_price}/${r.unit} (${r.bill_date})</p>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      lucide.createIcons();
+    }
+
+    // ----------------- ACTIVITY LOG -----------------
+    async function loadActivityLog() {
+      try {
+        const res = await fetch("/api/activity");
+        const logs = await res.json();
+        const container = document.getElementById("activity-list");
+
+        if (!logs || logs.length === 0) {
+          container.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No activity recorded yet.</p>`;
+          return;
+        }
+
+        container.innerHTML = logs.map(l => {
+          const userIcon = l.user_name === 'Wife' ? '👩' : (l.user_name === 'Vipin' ? '👤' : '⚙️');
+          return `
+            <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs">
+              <span class="text-lg">${userIcon}</span>
+              <div class="flex-1">
+                <p class="font-semibold text-slate-800">${l.description}</p>
+                <span class="text-[10px] text-slate-400">${l.created_at}</span>
+              </div>
+            </div>
+          `;
+        }).join("");
+      } catch (e) {}
+    }
+
+    // ----------------- MODALS & AUTO ENRICH -----------------
+    function openAddItemModal() {
+      document.getElementById("modal-add-item").classList.remove("hidden");
+    }
+    function closeAddItemModal() {
+      document.getElementById("modal-add-item").classList.add("hidden");
+    }
+
+    async function autoEnrichProduct() {
+      const q = document.getElementById("add-name").value.trim();
+      if (!q) {
+        alert("Enter item name first (e.g. Fortune Mustard Oil)");
+        return;
+      }
+      const btn = document.getElementById("btn-enrich");
+      btn.innerHTML = `<span class="animate-spin">⏳</span> Detecting...`;
+
+      try {
+        const res = await fetch(`/api/enrich-product?query=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        
+        if (data.name) document.getElementById("add-name").value = data.name;
+        if (data.brand) document.getElementById("add-brand").value = data.brand;
+        if (data.category) document.getElementById("add-category").value = data.category;
+        if (data.default_quantity) document.getElementById("add-qty").value = data.default_quantity;
+        if (data.default_unit) document.getElementById("add-unit").value = data.default_unit;
+        if (data.storage_location) document.getElementById("add-location").value = data.storage_location;
+      } catch (err) {
+        alert("Enrich lookup failed: " + err);
+      } finally {
+        btn.innerHTML = `<i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-600"></i><span>AI Fill</span>`;
+        lucide.createIcons();
+      }
+    }
+
+    async function submitNewItem() {
+      const name = document.getElementById("add-name").value.trim();
+      if (!name) return alert("Please enter item name");
+
+      const brand = document.getElementById("add-brand").value.trim();
+      const category = document.getElementById("add-category").value;
+      const quantity = parseFloat(document.getElementById("add-qty").value) || 1.0;
+      const unit = document.getElementById("add-unit").value;
+      const location = document.getElementById("add-location").value;
+      const status = document.querySelector("input[name='add-status']:checked").value;
+
+      const payload = {
+        name: name,
+        brand: brand,
+        preferred_brand: brand,
+        category: category,
+        quantity: quantity,
+        unit: unit,
+        storage_location: location,
+        status: status,
+        updated_by: currentUser
+      };
+
+      try {
+        const res = await fetch("/api/inventory", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          closeAddItemModal();
+          loadInventory();
+        }
+      } catch (e) {
+        alert(e);
+      }
+    }
+
+    function openStarModal(id, title, brand, reason) {
+      document.getElementById("star-item-id").value = id;
+      document.getElementById("star-item-title").innerText = title;
+      document.getElementById("star-brand-input").value = brand;
+      document.getElementById("star-reason-input").value = reason;
+      document.getElementById("modal-star-brand").classList.remove("hidden");
+    }
+
+    function closeStarModal() {
+      document.getElementById("modal-star-brand").classList.add("hidden");
+    }
+
+    function openQuickShopModal() {
+      document.getElementById("shop-name-input").value = "";
+      document.getElementById("shop-brand-input").value = "";
+      document.getElementById("shop-qty-input").value = "1.0";
+      document.getElementById("modal-quick-shop").classList.remove("hidden");
+    }
+
+    function closeQuickShopModal() {
+      document.getElementById("modal-quick-shop").classList.add("hidden");
+    }
+
+    async function submitQuickShopItem() {
+      const name = document.getElementById("shop-name-input").value.trim();
+      if (!name) return alert("Please enter item name");
+      const brand = document.getElementById("shop-brand-input").value.trim();
+      const qty = parseFloat(document.getElementById("shop-qty-input").value) || 1.0;
+      const unit = document.getElementById("shop-unit-input").value;
+
+      try {
+        const res = await fetch("/api/shopping-list", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            item_name: name,
+            preferred_brand: brand,
+            quantity_needed: qty,
+            unit: unit,
+            added_by: currentUser
+          })
+        });
+        if (res.ok) {
+          closeQuickShopModal();
+          loadShoppingList();
+        }
+      } catch (e) {
+        alert("Error adding item: " + e);
+      }
+    }
+
+    async function saveStarBrand() {
+      const id = document.getElementById("star-item-id").value;
+      const brand = document.getElementById("star-brand-input").value.trim();
+      const reason = document.getElementById("star-reason-input").value.trim();
+
+      if (!brand) return alert("Please enter a brand name to star");
+
+      try {
+        const res = await fetch(`/api/inventory/${id}/star-brand`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preferred_brand: brand, brand_reason: reason, user_name: currentUser })
+        });
+        if (res.ok) {
+          closeStarModal();
+          loadInventory();
+          loadShoppingList();
+        }
+      } catch (e) {
+        alert(e);
+      }
+    }
+
+    // ----------------- PHONE SYNC QR CODE -----------------
+    async function setupNetworkQR() {
+      try {
+        const res = await fetch("/api/network-info");
+        const info = await res.json();
+        const url = info.mobile_url;
+        document.getElementById("phone-url-text").innerText = url;
+
+        const qrContainer = document.getElementById("qrcode-container");
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, {
+          text: url,
+          width: 160,
+          height: 160,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch (e) {}
+    }
+
+    function openPhoneModal() {
+      document.getElementById("modal-phone-qr").classList.remove("hidden");
+    }
+    function closePhoneModal() {
+      document.getElementById("modal-phone-qr").classList.add("hidden");
+    }
+
+    function escapeQuotes(str) {
+      return (str || '').replace(/'/g, "\\'");
+    }
+  </script>
+</body>
+</html>
