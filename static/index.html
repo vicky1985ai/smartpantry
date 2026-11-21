@@ -1213,9 +1213,12 @@
     // ----------------- PHONE SYNC QR CODE -----------------
     async function setupNetworkQR() {
       try {
-        const res = await fetch("/api/network-info");
-        const info = await res.json();
-        const url = info.mobile_url;
+        let url = window.location.origin;
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+          const res = await fetch("/api/network-info");
+          const info = await res.json();
+          url = info.mobile_url;
+        }
         document.getElementById("phone-url-text").innerText = url;
 
         const qrContainer = document.getElementById("qrcode-container");
