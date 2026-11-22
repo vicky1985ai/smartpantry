@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SmartPantry - Home Grocery & Price Intelligence</title>
   
+  <!-- PWA & Mobile Meta Tags -->
+  <link rel="manifest" href="/static/manifest.json" />
+  <meta name="theme-color" content="#059669" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="SmartPantry" />
+  <link rel="apple-touch-icon" href="/static/icons/icon-192.png" />
+  <link rel="icon" type="image/png" href="/static/icons/icon-192.png" />
+  
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
@@ -558,7 +567,7 @@
     let shoppingData = [];
     let parsedBillDraft = null;
 
-    // Initialize Lucide icons
+    // Initialize Lucide icons & Service Worker
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
       loadInventory();
@@ -566,6 +575,10 @@
       loadActivityLog();
       loadPriceRadar();
       setupNetworkQR();
+
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/static/sw.js').catch(() => {});
+      }
     });
 
     function setActiveUser(user) {
