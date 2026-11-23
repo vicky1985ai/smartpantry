@@ -1,118 +1,171 @@
-import sqlite3
 import os
 from datetime import datetime
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "data", "smart_pantry.db")
+RAW_DB_URL = os.environ.get("DATABASE_URL", "")
 
-def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+if RAW_DB_URL:
+    # Render provides postgres://, SQLAlchemy requires postgresql://
+    if RAW_DB_URL.startswith("postgres://"):
+        DB_URL = RAW_DB_URL.replace("postgres://", "postgresql://", 1)
+    else:
+        DB_URL = RAW_DB_URL
+else:
+    db_dir = os.path.join(os.path.dirname(__file__), "data")
+    os.makedirs(db_dir, exist_ok=True)
+    DB_PATH = os.path.join(db_dir, "smart_pantry.db")
+    DB_URL = f"sqlite:///{DB_PATH}"
+
+# Connect args (needed for SQLite multi-thread)
+connect_args = {"check_same_thread": False} if DB_URL.startswith("sqlite") else {}
+
+engine = create_engine(DB_URL, connect_args=connect_args)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+def get_connection():
+    return engine.connect()
+
+def is_postgres():
+    return DB_URL.startswith("postgresql")
 
 def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = get_db()
-    cursor = conn.cursor()
+    with engine.begin() as conn:
+        id_col = "SERIAL PRIMARY KEY" if is_postgres() else "INTEGER PRIMARY KEY AUTOINCREMENT"
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS inventory (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        category TEXT NOT NULL,
-        brand TEXT,
-        preferred_brand TEXT,
-        brand_reason TEXT,
-        quantity REAL DEFAULT 1.0,
-        unit TEXT DEFAULT 'kg',
-        status TEXT DEFAULT 'in_stock',
-        min_threshold REAL DEFAULT 1.0,
-        storage_location TEXT DEFAULT 'Kitchen Pantry',
-        last_bought_price REAL,
-        last_bought_store TEXT,
-        last_bought_date TEXT,
-        updated_by TEXT DEFAULT 'Vipin',
-        updated_at TEXT
-    )
-    """)
+        # Categories table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS categories (
+            id {id_col},
+            name VARCHAR(100) UNIQUE NOT NULL,
+            icon VARCHAR(20) DEFAULT '📦',
+            created_at VARCHAR(50)
+        )
+        """))
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS shopping_list (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        inventory_id INTEGER,
-        item_name TEXT NOT NULL,
-        preferred_brand TEXT,
-        quantity_needed REAL DEFAULT 1.0,
-        unit TEXT DEFAULT 'kg',
-        category TEXT,
-        store_recommendation TEXT,
-        lowest_price REAL,
-        lowest_store TEXT,
-        is_bought INTEGER DEFAULT 0,
-        added_by TEXT DEFAULT 'Vipin',
-        created_at TEXT
-    )
-    """)
+        # Inventory table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS inventory (
+            id {id_col},
+            name VARCHAR(255) NOT NULL,
+            category VARCHAR(100) NOT NULL,
+            brand VARCHAR(255),
+            preferred_brand VARCHAR(255),
+            brand_reason VARCHAR(255),
+            quantity FLOAT DEFAULT 1.0,
+            unit VARCHAR(20) DEFAULT 'kg',
+            status VARCHAR(50) DEFAULT 'in_stock',
+            min_threshold FLOAT DEFAULT 1.0,
+            storage_location VARCHAR(100) DEFAULT 'Kitchen Pantry',
+            last_bought_price FLOAT,
+            last_bought_store VARCHAR(100),
+            last_bought_date VARCHAR(50),
+            updated_by VARCHAR(100) DEFAULT 'Vipin',
+            updated_at VARCHAR(50)
+        )
+        """))
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS price_history (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        item_name TEXT NOT NULL,
-        brand TEXT,
-        store_name TEXT NOT NULL,
-        quantity REAL DEFAULT 1.0,
-        unit TEXT DEFAULT 'kg',
-        price_paid REAL NOT NULL,
-        unit_price REAL,
-        bill_date TEXT,
-        bill_id INTEGER,
-        notes TEXT,
-        created_at TEXT
-    )
-    """)
+        # Shopping List table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS shopping_list (
+            id {id_col},
+            inventory_id INTEGER,
+            item_name VARCHAR(255) NOT NULL,
+            preferred_brand VARCHAR(255),
+            quantity_needed FLOAT DEFAULT 1.0,
+            unit VARCHAR(20) DEFAULT 'kg',
+            category VARCHAR(100),
+            store_recommendation VARCHAR(255),
+            lowest_price FLOAT,
+            lowest_store VARCHAR(100),
+            is_bought INTEGER DEFAULT 0,
+            added_by VARCHAR(100) DEFAULT 'Vipin',
+            created_at VARCHAR(50)
+        )
+        """))
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS bills (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        store_name TEXT,
-        bill_date TEXT,
-        total_amount REAL,
-        item_count INTEGER,
-        image_filename TEXT,
-        raw_json TEXT,
-        uploaded_by TEXT DEFAULT 'Vipin',
-        created_at TEXT
-    )
-    """)
+        # Price History table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS price_history (
+            id {id_col},
+            item_name VARCHAR(255) NOT NULL,
+            brand VARCHAR(255),
+            store_name VARCHAR(100) NOT NULL,
+            quantity FLOAT DEFAULT 1.0,
+            unit VARCHAR(20) DEFAULT 'kg',
+            price_paid FLOAT NOT NULL,
+            unit_price FLOAT,
+            bill_date VARCHAR(50),
+            bill_id INTEGER,
+            notes VARCHAR(255),
+            created_at VARCHAR(50)
+        )
+        """))
 
-    cursor.execute("""
-    CREATE TABLE IF NOT EXISTS activity_log (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_name TEXT NOT NULL,
-        action_type TEXT NOT NULL,
-        description TEXT NOT NULL,
-        created_at TEXT
-    )
-    """)
+        # Bills table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS bills (
+            id {id_col},
+            store_name VARCHAR(100),
+            bill_date VARCHAR(50),
+            total_amount FLOAT,
+            item_count INTEGER,
+            image_filename VARCHAR(255),
+            raw_json TEXT,
+            uploaded_by VARCHAR(100) DEFAULT 'Vipin',
+            created_at VARCHAR(50)
+        )
+        """))
 
-    conn.commit()
+        # Activity Log table
+        conn.execute(text(f"""
+        CREATE TABLE IF NOT EXISTS activity_log (
+            id {id_col},
+            user_name VARCHAR(100) NOT NULL,
+            action_type VARCHAR(100) NOT NULL,
+            description TEXT NOT NULL,
+            created_at VARCHAR(50)
+        )
+        """))
 
-    # Seed initial realistic household data if table is empty
-    cursor.execute("SELECT COUNT(*) FROM inventory")
-    count = cursor.fetchone()[0]
-    if count == 0:
-        seed_initial_data(cursor)
-        conn.commit()
+        # Seed categories if empty
+        cat_count = conn.execute(text("SELECT COUNT(*) FROM categories")).scalar()
+        if cat_count == 0:
+            seed_categories(conn)
 
-    conn.close()
+        # Seed initial data if inventory empty
+        inv_count = conn.execute(text("SELECT COUNT(*) FROM inventory")).scalar()
+        if inv_count == 0:
+            seed_initial_data(conn)
 
-def log_activity(cursor, user_name, action_type, description):
+def seed_categories(conn):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    cursor.execute(
-        "INSERT INTO activity_log (user_name, action_type, description, created_at) VALUES (?, ?, ?, ?)",
-        (user_name, action_type, description, now)
+    defaults = [
+        ("Grains & Dals", "🌾"),
+        ("Dairy & Bakery", "🥛"),
+        ("Spices & Cooking Oils", "🛢️"),
+        ("Fresh Produce", "🥦"),
+        ("Snacks & Beverages", "☕"),
+        ("Cleaning & Personal Care", "🧼"),
+        ("Stationery", "✏️"),
+        ("Medicines & First Aid", "💊"),
+        ("Toiletries & Hygiene", "🪥"),
+        ("Other", "📦"),
+    ]
+    for name, icon in defaults:
+        conn.execute(
+            text("INSERT INTO categories (name, icon, created_at) VALUES (:name, :icon, :created_at)"),
+            {"name": name, "icon": icon, "created_at": now}
+        )
+
+def log_activity(conn, user_name, action_type, description):
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    conn.execute(
+        text("INSERT INTO activity_log (user_name, action_type, description, created_at) VALUES (:user_name, :action_type, :description, :created_at)"),
+        {"user_name": user_name, "action_type": action_type, "description": description, "created_at": now}
     )
 
-def seed_initial_data(cursor):
+def seed_initial_data(conn):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     sample_items = [
@@ -131,57 +184,52 @@ def seed_initial_data(cursor):
     ]
 
     for item in sample_items:
-        cursor.execute("""
+        conn.execute(text("""
         INSERT INTO inventory (name, category, brand, preferred_brand, brand_reason, quantity, unit, status, min_threshold, storage_location, last_bought_price, last_bought_store, last_bought_date, updated_by, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'System', ?)
-        """, (item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10], item[11], item[12], now))
-        inv_id = cursor.lastrowid
+        VALUES (:name, :category, :brand, :preferred_brand, :brand_reason, :quantity, :unit, :status, :min_threshold, :storage_location, :last_bought_price, :last_bought_store, :last_bought_date, 'System', :updated_at)
+        """), {
+            "name": item[0], "category": item[1], "brand": item[2], "preferred_brand": item[3],
+            "brand_reason": item[4], "quantity": item[5], "unit": item[6], "status": item[7],
+            "min_threshold": item[8], "storage_location": item[9], "last_bought_price": item[10],
+            "last_bought_store": item[11], "last_bought_date": item[12], "updated_at": now
+        })
 
-        # If low or out_of_stock, automatically seed into shopping list!
-        if item[7] in ("low", "out_of_stock"):
-            cursor.execute("""
-            INSERT INTO shopping_list (inventory_id, item_name, preferred_brand, quantity_needed, unit, category, store_recommendation, lowest_price, lowest_store, is_bought, added_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 'Auto-Sync', ?)
-            """, (inv_id, item[0], item[3], item[8], item[6], item[1], f"Recommended store: {item[11]} (last ₹{item[10]})", item[10], item[11], now))
+    # Only add STARRED items that are low/empty to shopping list!
+    # Tata Sampann Toor Dal (low + starred) & Amul Butter (low + starred) & Amul Milk (out + starred)
+    starred_low_items = [
+        ("Tata Sampann Toor Dal", "Tata Sampann", 1.0, "kg", "Grains & Dals", "Recommended store: DMart (last ₹175)", 175.0, "DMart"),
+        ("Amul Butter", "Amul", 0.5, "kg", "Dairy & Bakery", "Recommended store: Blinkit (last ₹56)", 56.0, "Blinkit"),
+        ("Amul Taaza Toned Milk", "Amul", 1.0, "L", "Dairy & Bakery", "Recommended store: Blinkit (last ₹54)", 54.0, "Blinkit"),
+    ]
+    for s in starred_low_items:
+        conn.execute(text("""
+        INSERT INTO shopping_list (item_name, preferred_brand, quantity_needed, unit, category, store_recommendation, lowest_price, lowest_store, is_bought, added_by, created_at)
+        VALUES (:name, :brand, :qty, :unit, :cat, :store_rec, :lowest_price, :lowest_store, 0, 'Auto-Sync (⭐ Staple)', :created_at)
+        """), {
+            "name": s[0], "brand": s[1], "qty": s[2], "unit": s[3], "cat": s[4],
+            "store_rec": s[5], "lowest_price": s[6], "lowest_store": s[7], "created_at": now
+        })
 
-    # Seed sample price comparison history across stores
+    # Sample price history
     sample_prices = [
-        # Toor Dal 1kg
         ("Tata Sampann Toor Dal", "Tata Sampann", "DMart", 1.0, "kg", 175.0, 175.0, "2026-11-05"),
         ("Tata Sampann Toor Dal", "Tata Sampann", "Blinkit", 1.0, "kg", 195.0, 195.0, "2026-11-12"),
         ("Tata Sampann Toor Dal", "Tata Sampann", "Zepto", 1.0, "kg", 198.0, 198.0, "2026-11-15"),
-        ("Tata Sampann Toor Dal", "Tata Sampann", "JioMart", 1.0, "kg", 182.0, 182.0, "2026-11-08"),
-        ("Tata Sampann Toor Dal", "Tata Sampann", "BigBasket", 1.0, "kg", 185.0, 185.0, "2026-11-01"),
-
-        # Aashirvaad Atta 10kg
         ("Aashirvaad Sharbati Atta", "Aashirvaad", "DMart", 10.0, "kg", 425.0, 42.5, "2026-11-10"),
         ("Aashirvaad Sharbati Atta", "Aashirvaad", "Blinkit", 10.0, "kg", 475.0, 47.5, "2026-11-14"),
-        ("Aashirvaad Sharbati Atta", "Aashirvaad", "BigBasket", 10.0, "kg", 445.0, 44.5, "2026-11-03"),
-        ("Aashirvaad Sharbati Atta", "Aashirvaad", "JioMart", 10.0, "kg", 435.0, 43.5, "2026-11-07"),
-
-        # Amul Butter 500g
         ("Amul Butter", "Amul", "DMart", 0.5, "kg", 265.0, 530.0, "2026-10-25"),
         ("Amul Butter", "Amul", "Blinkit", 0.5, "kg", 285.0, 570.0, "2026-11-18"),
-        ("Amul Butter", "Amul", "Zepto", 0.5, "kg", 285.0, 570.0, "2026-11-16"),
-        ("Amul Butter", "Amul", "Instamart", 0.5, "kg", 282.0, 564.0, "2026-11-14"),
-
-        # Fortune Mustard Oil 1L
         ("Fortune Kachi Ghani Mustard Oil", "Fortune", "DMart", 1.0, "L", 145.0, 145.0, "2026-11-08"),
         ("Fortune Kachi Ghani Mustard Oil", "Fortune", "Blinkit", 1.0, "L", 168.0, 168.0, "2026-11-16"),
-        ("Fortune Kachi Ghani Mustard Oil", "Fortune", "Zepto", 1.0, "L", 165.0, 165.0, "2026-11-17"),
-        ("Fortune Kachi Ghani Mustard Oil", "Fortune", "Instamart", 1.0, "L", 169.0, 169.0, "2026-11-19"),
-        ("Fortune Kachi Ghani Mustard Oil", "Fortune", "BigBasket", 1.0, "L", 152.0, 152.0, "2026-11-04"),
-
-        # Surf Excel Matic 2L
         ("Surf Excel Matic Liquid Detergent", "Surf Excel", "DMart", 2.0, "L", 365.0, 182.5, "2026-10-28"),
-        ("Surf Excel Matic Liquid Detergent", "Surf Excel", "Blinkit", 2.0, "L", 420.0, 210.0, "2026-11-11"),
-        ("Surf Excel Matic Liquid Detergent", "Surf Excel", "JioMart", 2.0, "L", 380.0, 190.0, "2026-11-05"),
     ]
-
     for p in sample_prices:
-        cursor.execute("""
+        conn.execute(text("""
         INSERT INTO price_history (item_name, brand, store_name, quantity, unit, price_paid, unit_price, bill_date, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], now))
+        VALUES (:name, :brand, :store, :qty, :unit, :price, :unit_price, :bill_date, :created_at)
+        """), {
+            "name": p[0], "brand": p[1], "store": p[2], "qty": p[3], "unit": p[4],
+            "price": p[5], "unit_price": p[6], "bill_date": p[7], "created_at": now
+        })
 
-    log_activity(cursor, "System", "init", "SmartPantry database initialized with starter household items & price intelligence.")
+    log_activity(conn, "System", "init", "SmartPantry database initialized.")

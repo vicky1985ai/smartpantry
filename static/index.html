@@ -72,7 +72,7 @@
         </div>
       </div>
 
-      <!-- Header Actions: User Selector & Mobile Connect -->
+      <!-- Header Actions: User Selector & Tools -->
       <div class="flex items-center space-x-2">
         <!-- User Switcher -->
         <div class="bg-slate-100 p-1 rounded-xl flex items-center border border-slate-200 text-xs font-semibold">
@@ -85,6 +85,12 @@
             <span>Wife</span>
           </button>
         </div>
+
+        <!-- Backup Data Modal Button -->
+        <button onclick="openBackupModal()" title="Backup & Restore Data" class="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition">
+          <i data-lucide="database" class="w-4 h-4 text-brand-600"></i>
+          <span class="hidden sm:inline">Backup</span>
+        </button>
 
         <!-- Connect Phone QR Button -->
         <button onclick="openPhoneModal()" class="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-semibold text-slate-700 transition">
@@ -132,26 +138,22 @@
         <!-- Search -->
         <div class="relative flex-1 max-w-md">
           <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-slate-400"></i>
-          <input type="text" id="pantry-search" oninput="filterInventory()" placeholder="Search atta, dal, oil, butter..." 
+          <input type="text" id="pantry-search" oninput="filterInventory()" placeholder="Search atta, dal, stationery, oil..." 
             class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition shadow-sm" />
         </div>
 
-        <!-- Add Item Button -->
-        <button onclick="openAddItemModal()" class="flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-600/20 transition">
-          <i data-lucide="plus-circle" class="w-4 h-4"></i>
-          <span>Add Grocery Item</span>
-        </button>
+        <div class="flex items-center space-x-2">
+          <!-- Add Item Button -->
+          <button onclick="openAddItemModal()" class="flex-1 sm:flex-none flex items-center justify-center space-x-2 px-4 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-600/20 transition">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Add Item</span>
+          </button>
+        </div>
       </div>
 
-      <!-- Category Filter Chips -->
-      <div class="flex items-center space-x-2 overflow-x-auto hide-scrollbar pb-1 text-xs font-semibold">
-        <button onclick="setCategoryFilter('All')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-slate-900 text-white border border-slate-900 whitespace-nowrap">All Items</button>
-        <button onclick="setCategoryFilter('Grains & Dals')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🌾 Grains & Dals</button>
-        <button onclick="setCategoryFilter('Dairy & Bakery')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🥛 Dairy & Bakery</button>
-        <button onclick="setCategoryFilter('Spices & Cooking Oils')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🛢️ Oils & Spices</button>
-        <button onclick="setCategoryFilter('Fresh Produce')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🥦 Fresh Veggies</button>
-        <button onclick="setCategoryFilter('Snacks & Beverages')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">☕ Snacks & Tea</button>
-        <button onclick="setCategoryFilter('Cleaning & Personal Care')" class="cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap">🧼 Cleaning & Home</button>
+      <!-- Dynamic Category Filter Chips -->
+      <div id="category-chips-container" class="flex items-center space-x-2 overflow-x-auto hide-scrollbar pb-1 text-xs font-semibold">
+        <!-- Rendered dynamically via JS -->
       </div>
 
       <!-- Status Filter Tabs -->
@@ -168,7 +170,7 @@
       </div>
       <div id="inventory-empty" class="hidden text-center py-12 bg-white rounded-2xl border border-slate-200">
         <i data-lucide="package-search" class="w-12 h-12 mx-auto text-slate-300 mb-2"></i>
-        <p class="text-sm font-semibold text-slate-700">No grocery items found</p>
+        <p class="text-sm font-semibold text-slate-700">No items found</p>
         <p class="text-xs text-slate-400">Add an item or clear filters to see your inventory.</p>
       </div>
     </section>
@@ -183,7 +185,7 @@
             <span>🛒 Live Shared Shopping List</span>
           </h2>
           <p class="text-xs text-slate-600 mt-0.5">
-            Auto-populated whenever you or your wife marks an item as <b>Low</b> or <b>Empty</b>.
+            Starred staples (⭐) appear automatically when low. Non-starred items can be chosen below.
           </p>
         </div>
         <button onclick="openQuickShopModal()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold shadow-sm transition flex items-center space-x-1.5">
@@ -192,10 +194,31 @@
         </button>
       </div>
 
-      <!-- Shopping List Table/Cards -->
+      <!-- CRITICAL USER FEATURE: SELECTIVE PICKER FROM EMPTY & LOW PANTRY ITEMS -->
+      <div id="empty-low-section" class="bg-amber-50/70 border border-amber-200 rounded-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-base">📋</span>
+            <h3 class="text-xs font-extrabold text-amber-950 uppercase tracking-wide">
+              Empty & Low Pantry Items (Choose to Add)
+            </h3>
+            <span id="empty-low-badge" class="bg-amber-200 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+          </div>
+          <span class="text-[11px] text-amber-700 font-medium hidden sm:inline">Click "+ Add" on items you want to buy</span>
+        </div>
+        
+        <div id="empty-low-picker-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          <!-- Rendered via JS -->
+        </div>
+        <p id="empty-low-empty-msg" class="text-xs text-amber-800/70 py-2 text-center italic hidden">
+          No other empty or low items in your pantry.
+        </p>
+      </div>
+
+      <!-- Active Shopping List Table/Cards -->
       <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-xs font-bold text-slate-500">
-          <span>REQUIRED ITEMS</span>
+          <span>ACTIVE SHOPPING LIST</span>
           <span id="shopping-pending-count" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">0 Items</span>
         </div>
         <div id="shopping-list-container" class="divide-y divide-slate-100">
@@ -204,14 +227,13 @@
         <div id="shopping-empty" class="hidden text-center py-12">
           <i data-lucide="check-circle-2" class="w-12 h-12 mx-auto text-brand-500 mb-2"></i>
           <p class="text-sm font-bold text-slate-800">Your shopping list is clear!</p>
-          <p class="text-xs text-slate-400 mt-0.5">Everything is well-stocked in your pantry.</p>
+          <p class="text-xs text-slate-400 mt-0.5">Everything is well-stocked or not currently needed.</p>
         </div>
       </div>
     </section>
 
     <!-- ================= VIEW 3: AI BILL SCANNER ================= -->
     <section id="view-scanner" class="tab-view hidden space-y-5">
-      
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex items-center space-x-3">
           <div class="w-10 h-10 rounded-xl bg-brand-100 text-brand-700 flex items-center justify-center">
@@ -223,7 +245,6 @@
           </div>
         </div>
 
-        <!-- Dropzone / File Picker -->
         <div id="dropzone" onclick="triggerFileInput()" 
           class="border-2 border-dashed border-slate-300 hover:border-brand-500 bg-slate-50 hover:bg-brand-50/30 rounded-2xl p-8 text-center cursor-pointer transition flex flex-col items-center justify-center space-y-3">
           <div class="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-brand-600 border border-slate-200">
@@ -239,14 +260,12 @@
           <input type="file" id="bill-file-input" accept="image/*,.pdf" capture="environment" class="hidden" onchange="handleBillUpload(event)" />
         </div>
 
-        <!-- Scanning Spinner -->
         <div id="scan-loading" class="hidden text-center py-8 space-y-3">
           <div class="inline-block w-8 h-8 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
           <p class="text-sm font-bold text-slate-800">Analyzing bill with Gemini AI...</p>
           <p class="text-xs text-slate-500">Extracting store name, items, quantities, and price per unit.</p>
         </div>
 
-        <!-- Extracted Review Modal/Section -->
         <div id="scan-result" class="hidden space-y-4 pt-4 border-t border-slate-200">
           <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
             <div>
@@ -267,7 +286,6 @@
             </button>
           </div>
 
-          <!-- Extracted Items Review Table -->
           <div class="border border-slate-200 rounded-xl overflow-hidden">
             <div class="p-2.5 bg-slate-100 text-xs font-bold text-slate-600 flex justify-between">
               <span>EXTRACTED ITEMS (<span id="res-items-count">0</span>)</span>
@@ -278,13 +296,11 @@
             </div>
           </div>
         </div>
-
       </div>
     </section>
 
     <!-- ================= VIEW 4: PRICE RADAR ================= -->
     <section id="view-radar" class="tab-view hidden space-y-5">
-      
       <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
@@ -294,7 +310,6 @@
             </h2>
             <p class="text-xs text-slate-500">Historical comparison across Blinkit, Zepto, Instamart, JioMart, BigBasket, and DMart.</p>
           </div>
-          <!-- Search in price radar -->
           <div class="relative w-full sm:w-64">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
             <input type="text" id="radar-search" oninput="loadPriceRadar()" placeholder="Search product price..." 
@@ -302,7 +317,6 @@
           </div>
         </div>
 
-        <!-- Radar Comparison Cards -->
         <div id="radar-container" class="space-y-4">
           <!-- Rendered via JS -->
         </div>
@@ -359,9 +373,9 @@
 
   <!-- ================= MODAL: ADD GROCERY ITEM ================= -->
   <div id="modal-add-item" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4 border border-slate-200">
+    <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-xl space-y-4 border border-slate-200 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-        <h3 class="text-base font-bold text-slate-900">Add New Grocery Item</h3>
+        <h3 class="text-base font-bold text-slate-900">Add Item to Pantry</h3>
         <button onclick="closeAddItemModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
@@ -372,7 +386,7 @@
         <div>
           <label class="block text-slate-600 mb-1">Product Name</label>
           <div class="flex space-x-2">
-            <input type="text" id="add-name" placeholder="e.g. Fortune Mustard Oil" class="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
+            <input type="text" id="add-name" placeholder="e.g. A4 Notebook, Fortune Oil..." class="flex-1 px-3 py-2 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500" />
             <button type="button" onclick="autoEnrichProduct()" id="btn-enrich" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1">
               <i data-lucide="sparkles" class="w-3.5 h-3.5 text-brand-600"></i>
               <span>AI Fill</span>
@@ -380,22 +394,27 @@
           </div>
         </div>
 
+        <!-- Category (Dynamic + Add New) -->
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-slate-600">Category</label>
+            <button type="button" onclick="openAddCategoryModal()" class="text-brand-600 hover:underline text-[11px] font-bold">
+              + Add New Category
+            </button>
+          </div>
+          <select id="add-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
+            <!-- Populated dynamically via JS -->
+          </select>
+        </div>
+
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block text-slate-600 mb-1">Category</label>
-            <select id="add-category" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
-              <option value="Grains & Dals">Grains & Dals</option>
-              <option value="Dairy & Bakery">Dairy & Bakery</option>
-              <option value="Spices & Cooking Oils">Spices & Cooking Oils</option>
-              <option value="Fresh Produce">Fresh Produce</option>
-              <option value="Snacks & Beverages">Snacks & Beverages</option>
-              <option value="Cleaning & Personal Care">Cleaning & Personal Care</option>
-              <option value="Other">Other</option>
-            </select>
+            <label class="block text-slate-600 mb-1">Brand (Optional)</label>
+            <input type="text" id="add-brand" placeholder="e.g. Classmate, Fortune..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" />
           </div>
           <div>
             <label class="block text-slate-600 mb-1">Preferred Brand ⭐</label>
-            <input type="text" id="add-brand" placeholder="e.g. Fortune" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" />
+            <input type="text" id="add-preferred-brand" placeholder="Star staple brand" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs" />
           </div>
         </div>
 
@@ -420,7 +439,7 @@
             <select id="add-location" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
               <option value="Kitchen Pantry">Kitchen Pantry</option>
               <option value="Fridge">Fridge</option>
-              <option value="Freezer">Freezer</option>
+              <option value="Study / Desk">Study / Desk</option>
               <option value="Store Room">Store Room</option>
             </select>
           </div>
@@ -452,6 +471,78 @@
     </div>
   </div>
 
+  <!-- ================= MODAL: ADD CUSTOM CATEGORY ================= -->
+  <div id="modal-add-category" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <span>🏷️ Add New Category</span>
+        </h3>
+        <button onclick="closeAddCategoryModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs font-semibold">
+        <div>
+          <label class="block text-slate-600 mb-1">Category Name</label>
+          <input type="text" id="new-cat-name" placeholder="e.g. Stationery, Medicines, Hardware..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1">Emoji Icon</label>
+          <input type="text" id="new-cat-icon" value="✏️" placeholder="e.g. ✏️, 💊, 🛠️" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+      </div>
+
+      <div class="pt-2 flex justify-end space-x-2">
+        <button onclick="closeAddCategoryModal()" class="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
+        <button onclick="submitNewCategory()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition">Add Category</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL: STAR BRAND PREFERENCE (WITH UNSTAR OPTION) ================= -->
+  <div id="modal-star-brand" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+        <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
+          <span>⭐ Star Preference</span>
+        </h3>
+        <button onclick="closeStarModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="star-item-id" />
+      <div class="space-y-3 text-xs font-semibold">
+        <p id="star-item-title" class="text-sm font-bold text-slate-800">Item Name</p>
+        <p class="text-[11px] text-slate-500">
+          ⭐ Starred products automatically appear in your shopping list when empty.
+        </p>
+        <div>
+          <label class="block text-slate-600 mb-1">Preferred Brand</label>
+          <input type="text" id="star-brand-input" placeholder="e.g. Tata Sampann, Amul..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+        <div>
+          <label class="block text-slate-600 mb-1">Reason (Optional)</label>
+          <input type="text" id="star-reason-input" placeholder="e.g. Wife prefers taste / good quality" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+        </div>
+      </div>
+
+      <div class="pt-2 flex items-center justify-between">
+        <!-- CRITICAL USER FEATURE: REMOVE STAR MARK BUTTON -->
+        <button id="btn-unstar" onclick="removeStarBrand()" type="button" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition flex items-center space-x-1">
+          <i data-lucide="star-off" class="w-3.5 h-3.5"></i>
+          <span>Remove Star</span>
+        </button>
+        <div class="flex space-x-2">
+          <button onclick="closeStarModal()" class="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
+          <button onclick="saveStarBrand()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition">Save ⭐</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- ================= MODAL: QUICK ADD TO SHOPPING LIST ================= -->
   <div id="modal-quick-shop" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
@@ -467,11 +558,11 @@
       <div class="space-y-3 text-xs font-semibold">
         <div>
           <label class="block text-slate-600 mb-1">Item Name</label>
-          <input type="text" id="shop-name-input" placeholder="e.g. Bread, Paneer, Coriander..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+          <input type="text" id="shop-name-input" placeholder="e.g. Ball Pens, Notebook, Paneer..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
         </div>
         <div>
           <label class="block text-slate-600 mb-1">Preferred Brand (Optional ⭐)</label>
-          <input type="text" id="shop-brand-input" placeholder="e.g. Amul, Harvest Gold..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
+          <input type="text" id="shop-brand-input" placeholder="e.g. Cello, Classmate, Amul..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
@@ -482,10 +573,10 @@
             <label class="block text-slate-600 mb-1">Unit</label>
             <select id="shop-unit-input" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm bg-white">
               <option value="pack">pack</option>
+              <option value="pcs">pcs</option>
               <option value="kg">kg</option>
               <option value="L">L</option>
               <option value="g">g</option>
-              <option value="pcs">pcs</option>
             </select>
           </div>
         </div>
@@ -498,34 +589,33 @@
     </div>
   </div>
 
-  <!-- ================= MODAL: STAR BRAND PREFERENCE ================= -->
-  <div id="modal-star-brand" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-xl space-y-4 border border-slate-200">
-      <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+  <!-- ================= MODAL: BACKUP & RESTORE DATA ================= -->
+  <div id="modal-backup" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-xl space-y-4 border border-slate-200">
+      <div class="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 class="text-base font-bold text-slate-900 flex items-center space-x-1.5">
-          <span>⭐ Set Preferred Brand</span>
+          <i data-lucide="database" class="w-5 h-5 text-brand-600"></i>
+          <span>Backup & Restore Data</span>
         </h3>
-        <button onclick="closeStarModal()" class="text-slate-400 hover:text-slate-600 p-1">
+        <button onclick="closeBackupModal()" class="text-slate-400 hover:text-slate-600 p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <input type="hidden" id="star-item-id" />
-      <div class="space-y-3 text-xs font-semibold">
-        <p id="star-item-title" class="text-sm font-bold text-slate-800">Tata Sampann Toor Dal</p>
-        <div>
-          <label class="block text-slate-600 mb-1">Preferred Brand Name</label>
-          <input type="text" id="star-brand-input" placeholder="e.g. Tata Sampann" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
-        </div>
-        <div>
-          <label class="block text-slate-600 mb-1">Reason (Optional)</label>
-          <input type="text" id="star-reason-input" placeholder="e.g. Wife prefers taste / cooks faster" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm" />
-        </div>
-      </div>
+      <p class="text-xs text-slate-500">
+        Safely download a full backup file of your pantry, shopping list, and price history, or restore an earlier backup.
+      </p>
 
-      <div class="pt-2 flex justify-end space-x-2">
-        <button onclick="closeStarModal()" class="px-3 py-2 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold">Cancel</button>
-        <button onclick="saveStarBrand()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold transition">Set Preference ⭐</button>
+      <div class="space-y-3 pt-2">
+        <button onclick="downloadBackup()" class="w-full py-2.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center space-x-2 shadow-sm">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Download Backup File (.json)</span>
+        </button>
+
+        <div class="pt-2 border-t border-slate-100">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Restore from Backup File</label>
+          <input type="file" id="backup-file-input" accept=".json" onchange="uploadBackupFile(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200" />
+        </div>
       </div>
     </div>
   </div>
@@ -543,14 +633,12 @@
         </button>
       </div>
 
-      <p class="text-xs text-slate-500">Scan this QR code with your or your wife's phone camera (ensure phone is on home Wi-Fi):</p>
+      <p class="text-xs text-slate-500">Scan this QR code with your or your wife's phone camera:</p>
       
-      <div id="qrcode-container" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 inline-block mx-auto shadow-inner">
-        <!-- QR code canvas rendered here -->
-      </div>
+      <div id="qrcode-container" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 inline-block mx-auto shadow-inner"></div>
 
       <div class="bg-slate-100 p-2.5 rounded-xl text-xs font-mono text-slate-700 break-all select-all font-semibold" id="phone-url-text">
-        http://192.168.1.50:8000
+        https://smartpantry-8bby.onrender.com
       </div>
 
       <p class="text-[11px] text-slate-400">💡 Tip: Tap "Add to Home Screen" in Chrome/Safari to use it just like an app!</p>
@@ -559,19 +647,20 @@
 
   <!-- ================= JAVASCRIPT LOGIC ================= -->
   <script>
-    // Global state
     let currentUser = 'Vipin';
     let currentCategory = 'All';
     let currentStatus = 'All';
     let inventoryData = [];
     let shoppingData = [];
+    let categoriesList = [];
     let parsedBillDraft = null;
 
-    // Initialize Lucide icons & Service Worker
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
+      loadCategories();
       loadInventory();
       loadShoppingList();
+      loadEmptyAndLowItems();
       loadActivityLog();
       loadPriceRadar();
       setupNetworkQR();
@@ -600,16 +689,13 @@
       const target = document.getElementById(`view-${tabId}`);
       if (target) target.classList.remove("hidden");
 
-      // Update Desktop tabs
       ['pantry', 'shopping', 'scanner', 'radar', 'activity'].forEach(t => {
         const btnD = document.getElementById(`nav-d-${t}`);
         const btnM = document.getElementById(`nav-m-${t}`);
         if (btnD) {
-          if (t === tabId) {
-            btnD.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 bg-white text-brand-700 shadow-sm";
-          } else {
-            btnD.className = "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900";
-          }
+          btnD.className = (t === tabId)
+            ? "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 bg-white text-brand-700 shadow-sm"
+            : "flex-1 py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 text-slate-600 hover:text-slate-900";
         }
         if (btnM) {
           if (t === tabId) {
@@ -623,14 +709,98 @@
       });
 
       if (tabId === 'pantry') loadInventory();
-      if (tabId === 'shopping') loadShoppingList();
+      if (tabId === 'shopping') {
+        loadShoppingList();
+        loadEmptyAndLowItems();
+      }
       if (tabId === 'radar') loadPriceRadar();
       if (tabId === 'activity') loadActivityLog();
 
       lucide.createIcons();
     }
 
-    // ----------------- INVENTORY -----------------
+    // ----------------- DYNAMIC CATEGORIES -----------------
+    async function loadCategories() {
+      try {
+        const res = await fetch('/api/categories');
+        categoriesList = await res.json();
+        renderCategoryChips();
+        populateCategoryDropdown();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderCategoryChips() {
+      const container = document.getElementById("category-chips-container");
+      if (!container) return;
+
+      let html = `
+        <button onclick="setCategoryFilter('All')" class="cat-chip px-3.5 py-1.5 rounded-full transition ${currentCategory === 'All' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'} border whitespace-nowrap">
+          All Items
+        </button>
+      `;
+
+      categoriesList.forEach(c => {
+        const active = currentCategory === c.name;
+        html += `
+          <button onclick="setCategoryFilter('${escapeQuotes(c.name)}')" class="cat-chip px-3.5 py-1.5 rounded-full transition ${active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 hover:bg-slate-100 border-slate-200'} border whitespace-nowrap">
+            <span>${c.icon}</span> <span>${c.name}</span>
+          </button>
+        `;
+      });
+
+      // + Add New Category button
+      html += `
+        <button onclick="openAddCategoryModal()" class="px-3.5 py-1.5 rounded-full transition bg-brand-50 text-brand-700 hover:bg-brand-100 border border-brand-200 font-bold whitespace-nowrap flex items-center space-x-1">
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>New Category</span>
+        </button>
+      `;
+
+      container.innerHTML = html;
+      lucide.createIcons();
+    }
+
+    function populateCategoryDropdown() {
+      const sel = document.getElementById("add-category");
+      if (!sel) return;
+      sel.innerHTML = categoriesList.map(c => 
+        `<option value="${escapeQuotes(c.name)}">${c.icon} ${c.name}</option>`
+      ).join("");
+    }
+
+    function openAddCategoryModal() {
+      document.getElementById("new-cat-name").value = "";
+      document.getElementById("modal-add-category").classList.remove("hidden");
+    }
+    function closeAddCategoryModal() {
+      document.getElementById("modal-add-category").classList.add("hidden");
+    }
+
+    async function submitNewCategory() {
+      const name = document.getElementById("new-cat-name").value.trim();
+      const icon = document.getElementById("new-cat-icon").value.trim() || "📦";
+      if (!name) return alert("Please enter a category name");
+
+      try {
+        const res = await fetch("/api/categories", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: name, icon: icon })
+        });
+        if (res.ok) {
+          closeAddCategoryModal();
+          await loadCategories();
+          // Select it in dropdown
+          document.getElementById("add-category").value = name;
+        }
+      } catch (err) {
+        alert("Error creating category: " + err);
+      }
+    }
+
+    // ----------------- INVENTORY & INCREMENT/DECREMENT -----------------
     async function loadInventory() {
       try {
         let url = `/api/inventory?`;
@@ -664,19 +834,21 @@
         const statusBadge = isOut 
           ? `<span class="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🔴 Empty</span>`
           : (isLow 
-            ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🟡 Running Low</span>`
+            ? `<span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🟡 Low Stock</span>`
             : `<span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full">🟢 In Stock</span>`);
 
-        const starBrand = item.preferred_brand 
+        const isStarred = Boolean(item.preferred_brand && item.preferred_brand.trim());
+
+        const starBrand = isStarred 
           ? `<div onclick="openStarModal(${item.id}, '${escapeQuotes(item.name)}', '${escapeQuotes(item.preferred_brand)}', '${escapeQuotes(item.brand_reason || '')}')" 
-              class="cursor-pointer inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-200/60 px-2 py-0.5 rounded-lg text-[11px] font-bold hover:bg-amber-100 transition">
+              class="cursor-pointer inline-flex items-center space-x-1 bg-amber-50 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-lg text-[11px] font-bold hover:bg-amber-100 transition shadow-xs">
               <span>⭐ ${item.preferred_brand}</span>
-              ${item.brand_reason ? `<span class="text-amber-600 font-normal">(${item.brand_reason})</span>` : ''}
+              ${item.brand_reason ? `<span class="text-amber-700 font-normal">(${item.brand_reason})</span>` : ''}
             </div>`
           : `<button onclick="openStarModal(${item.id}, '${escapeQuotes(item.name)}', '', '')" 
               class="inline-flex items-center space-x-1 text-slate-400 hover:text-amber-600 text-[11px] font-semibold">
               <i data-lucide="star" class="w-3.5 h-3.5"></i>
-              <span>Set Preferred Brand</span>
+              <span>Star Preferred Brand</span>
             </button>`;
 
         const cheapestTip = item.cheapest_store && item.cheapest_price > 0
@@ -687,7 +859,7 @@
           : '';
 
         return `
-          <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
+          <div class="bg-white rounded-2xl border ${isStarred ? 'border-amber-200/80 shadow-xs' : 'border-slate-200'} p-4 shadow-sm hover:shadow-md transition flex flex-col justify-between space-y-3">
             <div>
               <div class="flex items-start justify-between gap-2">
                 <div>
@@ -697,33 +869,40 @@
                 ${statusBadge}
               </div>
 
-              <!-- Qty & Location -->
-              <div class="mt-3 flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2 rounded-xl">
+              <!-- Qty & Location with Category Tag -->
+              <div class="mt-3 flex items-center justify-between text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <div>
                   <span class="text-slate-400">Stock:</span>
-                  <span class="font-bold text-slate-800 text-sm">${item.quantity} ${item.unit}</span>
+                  <span class="font-extrabold text-slate-900 text-sm">${item.quantity} ${item.unit}</span>
                 </div>
                 <div class="text-right">
-                  <span class="text-slate-400">Place:</span>
-                  <span class="font-semibold text-slate-700">${item.storage_location}</span>
+                  <span class="text-slate-400">Category:</span>
+                  <span class="font-semibold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200 text-[11px]">${item.category}</span>
                 </div>
               </div>
 
               ${cheapestTip}
             </div>
 
-            <!-- 1-Tap Quick Action Buttons -->
-            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5 text-xs">
-              <button onclick="consumeItem(${item.id}, 'decrement')" title="Consumed some"
-                class="flex-1 py-1.5 px-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg transition flex items-center justify-center space-x-1">
-                <span>-1 ${item.unit}</span>
+            <!-- CRITICAL USER FEATURE: BOTH DECREASE (-) AND INCREASE (+) QUANTITY BUTTONS -->
+            <div class="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 text-xs">
+              <button onclick="consumeItem(${item.id}, 'decrement', 1.0)" title="Used 1 unit"
+                class="flex-1 py-1.5 px-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold rounded-lg transition flex items-center justify-center space-x-0.5">
+                <span>-1</span>
               </button>
+              
+              <button onclick="consumeItem(${item.id}, 'increment', 1.0)" title="Add / Purchased 1 unit"
+                class="flex-1 py-1.5 px-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-extrabold rounded-lg transition flex items-center justify-center space-x-0.5 border border-emerald-200">
+                <span>+1</span>
+              </button>
+
               <button onclick="consumeItem(${item.id}, 'mark_low')" title="Mark as running low"
-                class="flex-1 py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg transition flex items-center justify-center space-x-1">
-                <span>Mark Low</span>
+                class="flex-1 py-1.5 px-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold rounded-lg transition flex items-center justify-center">
+                <span>Low</span>
               </button>
+              
               <button onclick="consumeItem(${item.id}, 'mark_out')" title="Finished / Out of stock"
-                class="flex-1 py-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg transition flex items-center justify-center space-x-1">
+                class="flex-1 py-1.5 px-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-lg transition flex items-center justify-center">
                 <span>Empty</span>
               </button>
             </div>
@@ -745,16 +924,17 @@
       } catch (e) {}
     }
 
-    async function consumeItem(id, action) {
+    async function consumeItem(id, action, amount = 1.0) {
       try {
         const res = await fetch(`/api/inventory/${id}/consume`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: action, user_name: currentUser })
+          body: JSON.stringify({ action: action, amount: amount, user_name: currentUser })
         });
         if (res.ok) {
           loadInventory();
           loadShoppingList();
+          loadEmptyAndLowItems();
         }
       } catch (err) {
         alert("Error updating item: " + err);
@@ -766,20 +946,15 @@
       const filtered = inventoryData.filter(item => 
         item.name.toLowerCase().includes(q) || 
         (item.preferred_brand && item.preferred_brand.toLowerCase().includes(q)) ||
-        (item.brand && item.brand.toLowerCase().includes(q))
+        (item.brand && item.brand.toLowerCase().includes(q)) ||
+        (item.category && item.category.toLowerCase().includes(q))
       );
       renderInventory(filtered);
     }
 
     function setCategoryFilter(cat) {
       currentCategory = cat;
-      document.querySelectorAll(".cat-chip").forEach(btn => {
-        if (btn.innerText.includes(cat) || (cat === 'All' && btn.innerText.includes('All'))) {
-          btn.className = "cat-chip px-3.5 py-1.5 rounded-full transition bg-slate-900 text-white border border-slate-900 whitespace-nowrap";
-        } else {
-          btn.className = "cat-chip px-3.5 py-1.5 rounded-full transition bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 whitespace-nowrap";
-        }
-      });
+      renderCategoryChips();
       loadInventory();
     }
 
@@ -795,6 +970,70 @@
         }
       });
       loadInventory();
+    }
+
+    // ----------------- CRITICAL USER FEATURE: EMPTY & LOW PICKER -----------------
+    async function loadEmptyAndLowItems() {
+      try {
+        const res = await fetch('/api/inventory/empty-and-low');
+        const items = await res.json();
+        renderEmptyAndLowPicker(items);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderEmptyAndLowPicker(items) {
+      const list = document.getElementById("empty-low-picker-list");
+      const emptyMsg = document.getElementById("empty-low-empty-msg");
+      const badge = document.getElementById("empty-low-badge");
+
+      if (!list) return;
+      badge.innerText = items.length;
+
+      if (!items || items.length === 0) {
+        list.innerHTML = "";
+        emptyMsg.classList.remove("hidden");
+        return;
+      }
+      emptyMsg.classList.add("hidden");
+
+      list.innerHTML = items.map(it => {
+        const isOut = it.status === 'out_of_stock';
+        const statusText = isOut ? '🔴 Empty' : '🟡 Low';
+        const brandTag = it.preferred_brand ? `⭐ ${it.preferred_brand}` : (it.brand || it.category);
+
+        return `
+          <div class="bg-white p-2.5 rounded-xl border border-amber-200/70 shadow-xs flex items-center justify-between gap-2">
+            <div>
+              <p class="font-bold text-slate-900 text-xs">${it.name}</p>
+              <div class="flex items-center space-x-1.5 text-[10px] text-slate-500 mt-0.5">
+                <span class="font-bold ${isOut ? 'text-rose-600' : 'text-amber-600'}">${statusText}</span>
+                <span>•</span>
+                <span>${brandTag}</span>
+              </div>
+            </div>
+            <button onclick="addFromEmptyLow(${it.id})" class="px-2.5 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-[11px] shadow-xs transition flex items-center space-x-1 whitespace-nowrap">
+              <i data-lucide="plus" class="w-3 h-3"></i>
+              <span>Add</span>
+            </button>
+          </div>
+        `;
+      }).join("");
+
+      lucide.createIcons();
+    }
+
+    async function addFromEmptyLow(invId) {
+      try {
+        const res = await fetch(`/api/shopping-list/add-from-inventory/${invId}?user_name=${currentUser}`, { method: 'POST' });
+        if (res.ok) {
+          loadShoppingList();
+          loadEmptyAndLowItems();
+        }
+      } catch (err) {
+        alert(err);
+      }
     }
 
     // ----------------- SHOPPING LIST -----------------
@@ -884,6 +1123,7 @@
         if (res.ok) {
           loadShoppingList();
           loadInventory();
+          loadEmptyAndLowItems();
         }
       } catch (err) {
         alert(err);
@@ -894,6 +1134,7 @@
       try {
         await fetch(`/api/shopping-list/${id}`, { method: 'DELETE' });
         loadShoppingList();
+        loadEmptyAndLowItems();
       } catch (e) {}
     }
 
@@ -1026,7 +1267,6 @@
               ${savingsBadge}
             </div>
 
-            <!-- Stores Price Comparison Bar -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               ${records.map(r => {
                 const isLowest = r.unit_price === g.lowest_price;
@@ -1076,8 +1316,9 @@
       } catch (e) {}
     }
 
-    // ----------------- MODALS & AUTO ENRICH -----------------
+    // ----------------- MODALS, STAR & UNSTAR -----------------
     function openAddItemModal() {
+      populateCategoryDropdown();
       document.getElementById("modal-add-item").classList.remove("hidden");
     }
     function closeAddItemModal() {
@@ -1116,6 +1357,7 @@
       if (!name) return alert("Please enter item name");
 
       const brand = document.getElementById("add-brand").value.trim();
+      const prefBrand = document.getElementById("add-preferred-brand").value.trim();
       const category = document.getElementById("add-category").value;
       const quantity = parseFloat(document.getElementById("add-qty").value) || 1.0;
       const unit = document.getElementById("add-unit").value;
@@ -1125,7 +1367,7 @@
       const payload = {
         name: name,
         brand: brand,
-        preferred_brand: brand,
+        preferred_brand: prefBrand,
         category: category,
         quantity: quantity,
         unit: unit,
@@ -1143,17 +1385,28 @@
         if (res.ok) {
           closeAddItemModal();
           loadInventory();
+          loadEmptyAndLowItems();
+          loadShoppingList();
         }
       } catch (e) {
         alert(e);
       }
     }
 
+    // Star & Unstar Modal
     function openStarModal(id, title, brand, reason) {
       document.getElementById("star-item-id").value = id;
       document.getElementById("star-item-title").innerText = title;
       document.getElementById("star-brand-input").value = brand;
       document.getElementById("star-reason-input").value = reason;
+
+      const btnUnstar = document.getElementById("btn-unstar");
+      if (brand && brand.trim()) {
+        btnUnstar.classList.remove("hidden");
+      } else {
+        btnUnstar.classList.add("hidden");
+      }
+
       document.getElementById("modal-star-brand").classList.remove("hidden");
     }
 
@@ -1161,6 +1414,53 @@
       document.getElementById("modal-star-brand").classList.add("hidden");
     }
 
+    async function saveStarBrand() {
+      const id = document.getElementById("star-item-id").value;
+      const brand = document.getElementById("star-brand-input").value.trim();
+      const reason = document.getElementById("star-reason-input").value.trim();
+
+      if (!brand) return alert("Please enter a brand name to star (or click Remove Star)");
+
+      try {
+        const res = await fetch(`/api/inventory/${id}/star-brand`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preferred_brand: brand, brand_reason: reason, user_name: currentUser })
+        });
+        if (res.ok) {
+          closeStarModal();
+          loadInventory();
+          loadShoppingList();
+          loadEmptyAndLowItems();
+        }
+      } catch (e) {
+        alert(e);
+      }
+    }
+
+    // CRITICAL USER FEATURE: REMOVE STAR (UNSTAR)
+    async function removeStarBrand() {
+      const id = document.getElementById("star-item-id").value;
+      if (!confirm("Are you sure you want to remove the Star mark from this item?")) return;
+
+      try {
+        const res = await fetch(`/api/inventory/${id}/star-brand`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ preferred_brand: "UNSTAR", user_name: currentUser })
+        });
+        if (res.ok) {
+          closeStarModal();
+          loadInventory();
+          loadShoppingList();
+          loadEmptyAndLowItems();
+        }
+      } catch (e) {
+        alert(e);
+      }
+    }
+
+    // Quick Add to Shopping List
     function openQuickShopModal() {
       document.getElementById("shop-name-input").value = "";
       document.getElementById("shop-brand-input").value = "";
@@ -1194,33 +1494,67 @@
         if (res.ok) {
           closeQuickShopModal();
           loadShoppingList();
+          loadEmptyAndLowItems();
         }
       } catch (e) {
         alert("Error adding item: " + e);
       }
     }
 
-    async function saveStarBrand() {
-      const id = document.getElementById("star-item-id").value;
-      const brand = document.getElementById("star-brand-input").value.trim();
-      const reason = document.getElementById("star-reason-input").value.trim();
+    // ----------------- BACKUP & RESTORE DATA -----------------
+    function openBackupModal() {
+      document.getElementById("modal-backup").classList.remove("hidden");
+    }
+    function closeBackupModal() {
+      document.getElementById("modal-backup").classList.add("hidden");
+    }
 
-      if (!brand) return alert("Please enter a brand name to star");
-
+    async function downloadBackup() {
       try {
-        const res = await fetch(`/api/inventory/${id}/star-brand`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ preferred_brand: brand, brand_reason: reason, user_name: currentUser })
-        });
-        if (res.ok) {
-          closeStarModal();
-          loadInventory();
-          loadShoppingList();
-        }
-      } catch (e) {
-        alert(e);
+        const res = await fetch('/api/backup/export');
+        const data = await res.json();
+        const jsonStr = JSON.stringify(data, null, 2);
+        const blob = new Blob([jsonStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `smartpantry_backup_${new Date().toISOString().split("T")[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert("Backup download failed: " + err);
       }
+    }
+
+    async function uploadBackupFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const json = JSON.parse(ev.target.result);
+          const res = await fetch('/api/backup/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(json)
+          });
+          const out = await res.json();
+          if (out.success) {
+            alert("Backup restored successfully!");
+            closeBackupModal();
+            loadCategories();
+            loadInventory();
+            loadShoppingList();
+            loadEmptyAndLowItems();
+          }
+        } catch (err) {
+          alert("Invalid backup file: " + err);
+        }
+      };
+      reader.readAsText(file);
     }
 
     // ----------------- PHONE SYNC QR CODE -----------------
