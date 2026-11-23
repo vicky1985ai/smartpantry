@@ -6,9 +6,11 @@ from sqlalchemy.orm import sessionmaker
 RAW_DB_URL = os.environ.get("DATABASE_URL", "")
 
 if RAW_DB_URL:
-    # Render provides postgres://, SQLAlchemy requires postgresql://
+    # Render provides postgres://, SQLAlchemy requires postgresql+psycopg2:// or postgresql://
     if RAW_DB_URL.startswith("postgres://"):
-        DB_URL = RAW_DB_URL.replace("postgres://", "postgresql://", 1)
+        DB_URL = RAW_DB_URL.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif RAW_DB_URL.startswith("postgresql://") and not RAW_DB_URL.startswith("postgresql+"):
+        DB_URL = RAW_DB_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
     else:
         DB_URL = RAW_DB_URL
 else:
